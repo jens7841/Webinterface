@@ -1,0 +1,40 @@
+body {
+	margin-top: 70px;
+	background-image: url(../img/webinterface/background.jpg);
+	padding-top: 40px;
+	padding-bottom: 40px;
+	min-width: 100%;
+	background-color: #2b3c4e;
+	background-position: center center;
+	-webkit-background-size: cover;
+	background-size: cover;
+	background-attachment: fixed;
+}
+
+.navbar-default {
+	background-image: -webkit-gradient(linear, center top, center bottom, from(#cfcfcf),
+		to(white));
+	background-image: -webkit-linear-gradient(top, #cfcfcf, white);
+	background-image: -moz-linear-gradient(top, #cfcfcf, white);
+	background-image: -o-linear-gradient(top, #cfcfcf, white);
+	background-image: -ms-linear-gradient(top, #cfcfcf, white);
+	background-image: linear-gradient(to bottom, #cfcfcf, white);
+}
+
+.jumbotron p {
+	font-size: 19px;
+}
+
+.jumbotron {
+	padding-top: 15px;
+	padding-bottom: 20px;
+}
+
+#error {
+	width: 50%;
+	text-align: center;
+	margin: 0 auto;
+}
+.alert {
+	font-size: 18px;
+}
