@@ -59,7 +59,7 @@ public class ServerManager {
 
 	public void addServer(String name, File folder, ServerFile serverFile, String startParameter, String stopCommand,
 			boolean autostart, boolean createServerFolder, boolean ignoreFolderAlreadyExist)
-			throws ServerNameAlreadyExists, ServerFolderAlreadyExists {
+					throws ServerNameAlreadyExists, ServerFolderAlreadyExists {
 		if (getServer(name) != null) {
 			throw new ServerNameAlreadyExists("Servername does already exists!");
 		}

@@ -6,7 +6,7 @@
 
 	<servlet>
 		<servlet-name>RegisterServlet</servlet-name>
-		<servlet-class>de.clashofcubes.webinterface.usermanagement.registration.RegisterServlet</servlet-class>
+		<servlet-class>de.clashofcubes.webinterface.usernamangement.registration.RegisterServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>RegisterServlet</servlet-name>

@@ -35,7 +35,10 @@ public class ManagementPage extends Page {
 
 			case "serverlist":
 				serverList(urlEntries, request, response);
+				break;
+
 			default:
+				notFound(request);
 				break;
 			}
 
@@ -90,6 +93,10 @@ public class ManagementPage extends Page {
 			}
 		}
 
+	}
+
+	private void notFound(HttpServletRequest request) {
+		request.setAttribute(Webinterface.BODY_FILE_ATTRIBUTE, "error/404.jsp");
 	}
 
 }

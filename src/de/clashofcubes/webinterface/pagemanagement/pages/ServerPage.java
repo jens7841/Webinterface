@@ -19,7 +19,7 @@ public class ServerPage extends Page {
 	@Override
 	public void loadPage(String[] urlEntries, HttpServletRequest request, HttpServletResponse response) {
 		if (urlEntries.length <= 1) {
-			System.out.println("HÄ?");
+
 		} else {
 			ServerManager serverManager = Webinterface.getServerManager();
 			Server server = serverManager.getServer(urlEntries[1]);
