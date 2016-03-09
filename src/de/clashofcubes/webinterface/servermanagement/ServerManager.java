@@ -12,25 +12,25 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.clashofcubes.webinterface.servermanagement.exceptions.ServerException;
-import de.clashofcubes.webinterface.servermanagement.exceptions.ServerFolderAlreadyExists;
-import de.clashofcubes.webinterface.servermanagement.exceptions.ServerNameAlreadyExists;
 import de.clashofcubes.webinterface.servermanagement.serverfiles.ServerFile;
-import de.clashofcubes.webinterface.servermanagement.serverfiles.ServerFileManager;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerException;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerFolderAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerNameAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.versions.Version;
+import de.clashofcubes.webinterface.servermanagement.versions.VersionGroupManager;
 
 public class ServerManager {
 
 	private List<Server> servers;
 	private File serversRootPath;
-	private ServerFileManager serverFileManager;
 	private File serversFile;
+	private VersionGroupManager versionGroupManager;
 
-	public ServerManager(File serversFile, File defaultServerPath, ServerFileManager serverFileManager) {
+	public ServerManager(File serversFile, File defaultServerPath, VersionGroupManager versionGroupManager) {
 		servers = new ArrayList<>();
 		this.serversRootPath = defaultServerPath;
-		this.serverFileManager = serverFileManager;
 		this.serversFile = serversFile;
-		loadServers();
+		this.versionGroupManager = versionGroupManager;
 	}
 
 	public void startServer(String name) throws ServerException {
@@ -57,16 +57,19 @@ public class ServerManager {
 		server.stopServer();
 	}
 
-	public void addServer(String name, File folder, ServerFile serverFile, String startParameter, String stopCommand,
+	public void addServer(String name, File folder, Version version, String startParameter, String stopCommand,
 			boolean autostart, boolean createServerFolder, boolean ignoreFolderAlreadyExist)
-					throws ServerNameAlreadyExists, ServerFolderAlreadyExists {
+			throws ServerNameAlreadyExists, ServerFolderAlreadyExists {
 		if (getServer(name) != null) {
 			throw new ServerNameAlreadyExists("Servername does already exists!");
 		}
 		if (!ignoreFolderAlreadyExist && folder.exists()) {
 			throw new ServerFolderAlreadyExists("Folder does already exists!");
 		}
+		if (version == null || version.getServerFile() == null)
+			throw new IllegalArgumentException("Version or ServerFile could not be null!");
 
+		ServerFile serverFile = version.getServerFile();
 		if (createServerFolder) {
 			folder.mkdirs();
 			for (File f : serverFile.getFolder().listFiles()) {
@@ -81,14 +84,13 @@ public class ServerManager {
 			}
 		}
 
-		servers.add(new Server(name, folder, serverFile, startParameter, stopCommand, autostart));
+		servers.add(new Server(name, folder, version, startParameter, stopCommand, autostart));
 		saveServers();
-		System.out.println("Server " + name + " erfolgreich hinzugefügt!");
 	}
 
-	public void addServer(String name, File folder, ServerFile serverFile, String startParameter, String stopCommand,
+	public void addServer(String name, File folder, Version version, String startParameter, String stopCommand,
 			boolean autostart, boolean createServerFolder) throws ServerNameAlreadyExists, ServerFolderAlreadyExists {
-		addServer(name, folder, serverFile, startParameter, stopCommand, autostart, createServerFolder, false);
+		addServer(name, folder, version, startParameter, stopCommand, autostart, createServerFolder, false);
 	}
 
 	public Server getServer(String name) {
@@ -121,11 +123,11 @@ public class ServerManager {
 					if (data.length == 6) {
 						String serverName = data[0];
 						File folder = new File(data[1]);
-						ServerFile serverFile = serverFileManager.getFile(data[2]);
+						Version version = versionGroupManager.getVersion(data[2]);
 						String startParameter = data[3];
 						String stopCommand = data[4];
 						boolean autoStart = Boolean.getBoolean(data[5]);
-						servers.add(new Server(serverName, folder, serverFile, startParameter, stopCommand, autoStart));
+						servers.add(new Server(serverName, folder, version, startParameter, stopCommand, autoStart));
 					}
 				}
 			}
@@ -143,15 +145,16 @@ public class ServerManager {
 			for (Server server : servers) {
 				writer.print(server.getName());
 				writer.print(';');
-				writer.print(server.getFolder().getAbsolutePath());
+				writer.print(server.getServerFolder().getAbsolutePath());
 				writer.print(';');
-				writer.print(server.getServerFile().getName());
+				writer.print(server.getVersion().getVersionName());
 				writer.print(';');
 				writer.print(server.getStartParameter());
 				writer.print(';');
 				writer.print(server.getStopCommand());
 				writer.print(';');
-				writer.print(server.isAutostart());
+				writer.print(server.isAutoStart());
+				writer.print(';');
 				writer.println();
 			}
 

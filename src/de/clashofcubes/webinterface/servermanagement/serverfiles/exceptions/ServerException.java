@@ -1,6 +1,6 @@
-package de.clashofcubes.webinterface.servermanagement.exceptions;
+package de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions;
 
-public class ServerException extends Exception {
+public class ServerException extends RuntimeException {
 
 	private static final long serialVersionUID = 3528078479774120301L;
 

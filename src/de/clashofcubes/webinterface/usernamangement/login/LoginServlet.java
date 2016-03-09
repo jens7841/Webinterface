@@ -23,7 +23,12 @@ public class LoginServlet extends HttpServlet {
 		User user = Webinterface.getLoginManager().getUser(request);
 		if (user != null) {
 			Webinterface.getLoginManager().setSession(user, request);
-			response.sendRedirect(request.getContextPath() + "/wi/");
+			String lastPage = (String) request.getSession().getAttribute(Webinterface.LAST_PAGE_ATTRIBUTE);
+			if (lastPage != null) {
+				response.sendRedirect(lastPage);
+			} else {
+				response.sendRedirect(request.getContextPath() + "/wi/");
+			}
 		} else {
 
 			request.setAttribute("title", "Webinterface Login - ClashofCubes DE");

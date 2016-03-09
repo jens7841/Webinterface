@@ -6,24 +6,19 @@ public class ServerFile {
 
 	private String name;
 	private File file;
-	private String internFilePath;
-	private String internFolderPath;
 	private File folder;
 
-	public ServerFile(String name, String internFilePath, File file, String internFolderPath, File folder) {
+	public ServerFile(String name, File file) {
 		this.name = name;
-		this.internFilePath = internFilePath;
+		if (file != null) {
+			String path = file.getAbsolutePath();
+			folder = new File(path.substring(0, path.lastIndexOf("\\")));
+		}
 		this.file = file;
-		this.folder = folder;
-		this.internFolderPath = internFolderPath;
 	}
 
 	public String getName() {
 		return name;
-	}
-
-	public String getInternFilePath() {
-		return internFilePath;
 	}
 
 	public File getFile() {
@@ -35,11 +30,16 @@ public class ServerFile {
 	}
 
 	@Override
-	public String toString() {
-		return "ServerFile [name=" + name + ", internFilePath=" + internFilePath + "]";
-	}
+	public boolean equals(Object obj) {
 
-	public String getInternFolderPath() {
-		return internFolderPath;
+		if (obj instanceof ServerFile) {
+			ServerFile serverFile = (ServerFile) obj;
+			if (serverFile.getFile().equals(getFile()) && serverFile.getFolder().equals(getFolder())
+					&& serverFile.getName().equalsIgnoreCase(getName())) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

@@ -9,24 +9,21 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.ServletContext;
-
-import de.clashofcubes.webinterface.servermanagement.exceptions.ServerFileAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerFileAlreadyExists;
 
 public class ServerFileManager {
 
 	private List<ServerFile> files;
 	private File dataFile;
-	private ServletContext servletContext;
+	private File rootFolder;
 
-	public ServerFileManager(File file, ServletContext servletContext) {
+	public ServerFileManager(File file, File serverFilesRootFolder) {
 		files = new ArrayList<>();
 		this.dataFile = file;
-		this.servletContext = servletContext;
-		loadData();
+		this.rootFolder = serverFilesRootFolder;
 	}
 
-	public ServerFile getFile(String name) {
+	public ServerFile getServerFile(String name) {
 
 		for (ServerFile serverFile : files) {
 			if (serverFile.getName().equalsIgnoreCase(name)) {
@@ -37,7 +34,7 @@ public class ServerFileManager {
 	}
 
 	public void addFile(ServerFile file) throws ServerFileAlreadyExists {
-		if (getFile(file.getName()) != null) {
+		if (getServerFile(file.getName()) != null) {
 			throw new ServerFileAlreadyExists("The File was already added");
 		}
 		files.add(file);
@@ -51,9 +48,11 @@ public class ServerFileManager {
 			for (ServerFile serverFile : files) {
 				writer.print(serverFile.getName());
 				writer.print(';');
-				writer.print(serverFile.getInternFolderPath());
+				String path = rootFolder.toURI().relativize(serverFile.getFolder().toURI()).getPath();
+				writer.print(path);
 				writer.print(';');
 				writer.print(serverFile.getFile().getName());
+				writer.print(';');
 				writer.println();
 			}
 
@@ -85,9 +84,8 @@ public class ServerFileManager {
 						String serverName = data[0];
 						String internPathToFolder = data[1];
 						String fileName = data[2];
-						String internPathToFile = internPathToFolder + "/" + fileName;
-						files.add(new ServerFile(serverName, internPathToFile, new File(internPathToFile),
-								internPathToFolder, new File(servletContext.getRealPath(internPathToFolder))));
+						files.add(new ServerFile(serverName,
+								new File(rootFolder.getAbsolutePath() + "\\" + internPathToFolder + "\\" + fileName)));
 					}
 				}
 			}
@@ -95,6 +93,10 @@ public class ServerFileManager {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public File getRootFolder() {
+		return rootFolder;
 	}
 
 	public List<ServerFile> getFiles() {

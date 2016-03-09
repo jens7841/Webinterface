@@ -21,12 +21,15 @@ import de.clashofcubes.webinterface.pagemanagement.pages.ManagementPage;
 import de.clashofcubes.webinterface.pagemanagement.pages.ServerPage;
 import de.clashofcubes.webinterface.servermanagement.Server;
 import de.clashofcubes.webinterface.servermanagement.ServerManager;
-import de.clashofcubes.webinterface.servermanagement.exceptions.ServerException;
-import de.clashofcubes.webinterface.servermanagement.exceptions.ServerFileAlreadyExists;
-import de.clashofcubes.webinterface.servermanagement.exceptions.ServerFolderAlreadyExists;
-import de.clashofcubes.webinterface.servermanagement.exceptions.ServerNameAlreadyExists;
 import de.clashofcubes.webinterface.servermanagement.serverfiles.ServerFile;
 import de.clashofcubes.webinterface.servermanagement.serverfiles.ServerFileManager;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerException;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerFileAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerFolderAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerNameAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.versions.Version;
+import de.clashofcubes.webinterface.servermanagement.versions.VersionGroup;
+import de.clashofcubes.webinterface.servermanagement.versions.VersionGroupManager;
 import de.clashofcubes.webinterface.usernamangement.login.LoginManager;
 
 public class Webinterface extends HttpServlet implements ServletContextListener {
@@ -41,6 +44,7 @@ public class Webinterface extends HttpServlet implements ServletContextListener 
 	public static final String BODY_FILE_ATTRIBUTE = "bodyFile";
 	public static final String STYLE_LIST_ATTRIBUTE = "styles";
 	public static final String PAGE_ERROR_MESSAGE_ATTRIBUTE = "pageerrormessage";
+	public static final String LAST_PAGE_ATTRIBUTE = "lastvisitedpage";
 
 	public static final String DEFAULT_TEMPLATE_FILE = "/WEB-INF/webinterface/templateIndex.jsp";
 	public static final String DEFALT_TITLE_PREFIX = " - ClashofCubes Webinterface";
@@ -52,6 +56,31 @@ public class Webinterface extends HttpServlet implements ServletContextListener 
 	private static ServerFileManager serverFileManager;
 	private static ServerManager serverManager;
 	private static LoginManager loginManager;
+	private static VersionGroupManager versionGroupManager;
+
+	/*
+	 * In der "VersionGroup" befinden sich ne Liste von "Version"en von Servern
+	 * die im prinzip das selbe machen (z.B. alle Bukkit versionen, alle spigot
+	 * versionen...).
+	 * 
+	 * Eine "Version" enhält sozusagen eine "ServerFile" mit extras die man so
+	 * braucht
+	 * 
+	 * 
+	 * Ein "ServerTemplate" enthält einen Ordner indem sich Dateien und Ordner
+	 * befinden können. Diese werden bei benutzen dieses Templates in den
+	 * ServerOrdner kopiert. Dieses "ServerTemplate" kann mehrere "VersionGroup"
+	 * enthalten zu denen es zugeordnet ist. Dies hat einfluss, wo es überall
+	 * verwendet werden kann. z.b. ein Survivalgames template, dass bei der
+	 * Bukkit und Spigot VersionsGruppe benutzt werden kann. Wird entsprechen
+	 * als auswahl auf der Seite angezeigt.
+	 * 
+	 * TemplateManager über den man Templates bekommen kann, der sie speichert
+	 * und tolle sachen damit macht.
+	 * 
+	 * 
+	 * 
+	 */
 
 	public Webinterface() {
 		super();
@@ -99,11 +128,6 @@ public class Webinterface extends HttpServlet implements ServletContextListener 
 	}
 
 	@Override
-	public void init() throws ServletException {
-		super.init();
-	}
-
-	@Override
 	public void contextDestroyed(ServletContextEvent sce) {
 	}
 
@@ -121,24 +145,33 @@ public class Webinterface extends HttpServlet implements ServletContextListener 
 			e.printStackTrace();
 		}
 
-		serverFileManager = new ServerFileManager(new File("serverFiles.csv"), sce.getServletContext());
+		String serverFilesPath = "/META-INF/serverFiles/";
+		serverFileManager = new ServerFileManager(new File("serverFiles.csv"),
+				new File(sce.getServletContext().getRealPath(serverFilesPath)));
+		serverFileManager.loadData();
 
-		String pathToServerFiles = "/WEB-INF/serverFiles/";
+		String fileName = "spigot-1.8.8-R0.1.jar";
+		ServerFile serverFile = new ServerFile("Spigot 1.8",
+				new File(serverFileManager.getRootFolder().getAbsolutePath() + "/Spigot/Spigot1.8/" + fileName));
 		try {
-			String internFolderPath = pathToServerFiles + "spigot-1.8/";
-			String fileName = "spigot-1.8.8-R0.1.jar";
-			serverFileManager.addFile(new ServerFile("Spigot 1.8", internFolderPath + fileName,
-					new File(sce.getServletContext().getRealPath(internFolderPath + fileName)), internFolderPath,
-					new File(sce.getServletContext().getRealPath(internFolderPath))));
+			serverFileManager.addFile(serverFile);
 		} catch (ServerFileAlreadyExists e) {
 		}
 
+		versionGroupManager = new VersionGroupManager(new File("versionGroups.csv"), serverFileManager);
+		versionGroupManager.loadVersionGroups();
+
+		VersionGroup versionGroup = new VersionGroup("Spigot");
+		versionGroup.addVersion(new Version("Spigot 1.8", serverFile));
+		versionGroupManager.addVersionGroup(versionGroup);
+
 		serverManager = new ServerManager(new File("servers.csv"), new File("F:/Eclipse/BukkitTest"),
-				serverFileManager);
-		// testServer();
+				versionGroupManager);
+
+		serverManager.loadServers();
 		try {
-			serverManager.addServer("Test", new File("F:/Eclipse/BukkitTest"), serverFileManager.getFile("Spigot 1.8"),
-					"", "stop", false, true, true);
+			serverManager.addServer("Test", new File("F:/Eclipse/BukkitTest"),
+					versionGroupManager.getVersion("Spigot 1.8"), "", "stop", false, true, true);
 		} catch (ServerNameAlreadyExists e) {
 		} catch (ServerFolderAlreadyExists e) {
 		}
@@ -150,12 +183,7 @@ public class Webinterface extends HttpServlet implements ServletContextListener 
 		navigation.clear();
 		navigation.add(new NavItem("Home", URL, "", NavType.ENTRY, "home"));
 		navigation.add(new NavItem("Status", URL, "/status", NavType.ENTRY));
-		// navigation.add(new NavItem("Server", url, "/server",
-		// NavType.DROP_DOWN));
-		// for (Server server : serverManager.getServers()) {
-		// navigation.add(new NavItem(server.getName(), url, "/server/" +
-		// server.getName(), NavType.DROP_DOWN_ENTRY));
-		// }
+
 		navigation.add(new NavItem("Verwaltung", URL, "/verwaltung", NavType.DROP_DOWN));
 		navigation.add(new NavItem("Serverliste", URL, "/verwaltung/serverlist", NavType.DROP_DOWN_ENTRY));
 		navigation.add(new NavItem("Server hinzuf&uuml;gen", URL, "/verwaltung/addserver", NavType.DROP_DOWN_ENTRY));
@@ -221,5 +249,9 @@ public class Webinterface extends HttpServlet implements ServletContextListener 
 
 	public static LoginManager getLoginManager() {
 		return loginManager;
+	}
+
+	public static VersionGroupManager getVersionGroupManager() {
+		return versionGroupManager;
 	}
 }

@@ -43,7 +43,7 @@
 				</a></td>
 				<td>
 					<%
-						out.print(server.getServerFile().getName());
+						out.print(server.getVersion().getServerFile().getName());
 					%>
 				</td>
 				<td></td>

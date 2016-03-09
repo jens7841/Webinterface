@@ -1,4 +1,4 @@
-package de.clashofcubes.webinterface.servermanagement.exceptions;
+package de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions;
 
 public class ServerFolderAlreadyExists extends ServerException {
 

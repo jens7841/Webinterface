@@ -60,6 +60,7 @@ public class PageManager {
 				request.getRequestDispatcher(page.getIndexFile()).forward(request, response);
 			}
 		}
+		request.getSession().setAttribute(Webinterface.LAST_PAGE_ATTRIBUTE, request.getRequestURL().toString());
 
 	}
 

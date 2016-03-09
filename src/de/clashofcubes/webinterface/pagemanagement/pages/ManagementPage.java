@@ -11,9 +11,9 @@ import javax.servlet.http.HttpServletResponse;
 import de.clashofcubes.webinterface.Webinterface;
 import de.clashofcubes.webinterface.pagemanagement.Page;
 import de.clashofcubes.webinterface.servermanagement.Server;
-import de.clashofcubes.webinterface.servermanagement.exceptions.ServerFolderAlreadyExists;
-import de.clashofcubes.webinterface.servermanagement.exceptions.ServerNameAlreadyExists;
-import de.clashofcubes.webinterface.servermanagement.serverfiles.ServerFile;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerFolderAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerNameAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.versions.Version;
 
 public class ManagementPage extends Page {
 
@@ -62,18 +62,21 @@ public class ManagementPage extends Page {
 		if (request.getMethod().equalsIgnoreCase("post")) {
 
 			String serverName = request.getParameter("servername");
-			String version = request.getParameter("version");
+			String versionParameter = request.getParameter("version");
 
-			if (serverName != null && version != null && !serverName.isEmpty() && !version.isEmpty()) {
-				ServerFile file = Webinterface.getServerFileManager().getFile(version);
-				if (file != null) {
+			if (serverName != null && versionParameter != null && !serverName.isEmpty()
+					&& !versionParameter.isEmpty()) {
+				Version version = Webinterface.getVersionGroupManager().getVersion(versionParameter);
+				if (version != null) {
 					Server server = Webinterface.getServerManager().getServer(serverName);
 					if (server == null) {
 						String serverFolderName = serverName.replaceAll(" +", "_");
 						try {
 
 							Webinterface.getServerManager().addServer(serverName,
-									new File("servers/" + serverFolderName), file, "", "stop", false, true, true);
+									new File("servers/" + serverFolderName), version, "", "stop", false, true, true);
+							request.setAttribute("successmsg",
+									"Der Server " + serverName + " wurde erfolgreich hinzugef&uuml;gt");
 						} catch (ServerNameAlreadyExists e) {
 							e.printStackTrace();
 						} catch (ServerFolderAlreadyExists e) {
