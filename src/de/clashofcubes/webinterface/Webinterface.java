@@ -9,6 +9,7 @@ import java.util.List;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,14 +25,15 @@ import de.clashofcubes.webinterface.servermanagement.ServerManager;
 import de.clashofcubes.webinterface.servermanagement.serverfiles.ServerFile;
 import de.clashofcubes.webinterface.servermanagement.serverfiles.ServerFileManager;
 import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerException;
-import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerFileAlreadyExists;
-import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerFolderAlreadyExists;
-import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerNameAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.templates.ServerTemplateManager;
 import de.clashofcubes.webinterface.servermanagement.versions.Version;
 import de.clashofcubes.webinterface.servermanagement.versions.VersionGroup;
 import de.clashofcubes.webinterface.servermanagement.versions.VersionGroupManager;
 import de.clashofcubes.webinterface.usernamangement.login.LoginManager;
 
+@MultipartConfig(fileSizeThreshold = 1024 * 1024 * 2, // 2MB
+		maxFileSize = 1024 * 1024 * 100, // 10MB
+		maxRequestSize = 1024 * 1024 * 500) // 50MB
 public class Webinterface extends HttpServlet implements ServletContextListener {
 
 	private static final long serialVersionUID = 1L;
@@ -57,6 +59,7 @@ public class Webinterface extends HttpServlet implements ServletContextListener 
 	private static ServerManager serverManager;
 	private static LoginManager loginManager;
 	private static VersionGroupManager versionGroupManager;
+	private static ServerTemplateManager serverTemplateManager;
 
 	/*
 	 * In der "VersionGroup" befinden sich ne Liste von "Version"en von Servern
@@ -134,48 +137,64 @@ public class Webinterface extends HttpServlet implements ServletContextListener 
 	@Override
 	public void contextInitialized(ServletContextEvent sce) {
 
+		// add Pages
 		pageManager = new PageManager();
 		pageManager.addPage(new HomePage());
 		pageManager.addPage(new ManagementPage());
 		pageManager.addPage(new ServerPage());
 
+		// aktiviere Login Manager
+		loginManager = new LoginManager(new File("users.csv"));
 		try {
-			loginManager = new LoginManager(new File("users.csv"));
+			loginManager.readUsersFromFile();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
+		// aktiviere Server File Manager
 		String serverFilesPath = "/META-INF/serverFiles/";
 		serverFileManager = new ServerFileManager(new File("serverFiles.csv"),
 				new File(sce.getServletContext().getRealPath(serverFilesPath)));
 		serverFileManager.loadData();
 
+		// TEST vom ServerFileManager
+		// ServerFile Spigot 1.8
 		String fileName = "spigot-1.8.8-R0.1.jar";
 		ServerFile serverFile = new ServerFile("Spigot 1.8",
 				new File(serverFileManager.getRootFolder().getAbsolutePath() + "/Spigot/Spigot1.8/" + fileName));
 		try {
 			serverFileManager.addFile(serverFile);
-		} catch (ServerFileAlreadyExists e) {
-		}
+		} catch (ServerException e) {
 
+		}
+		// aktiviere versionGroupManager
 		versionGroupManager = new VersionGroupManager(new File("versionGroups.csv"), serverFileManager);
 		versionGroupManager.loadVersionGroups();
 
+		// TEST vom VersionGroupManager
+		// VersionGroup Spigot mit der Spigot 1.8 Versions (+ServerFile) drin
 		VersionGroup versionGroup = new VersionGroup("Spigot");
 		versionGroup.addVersion(new Version("Spigot 1.8", serverFile));
 		versionGroupManager.addVersionGroup(versionGroup);
 
+		// aktiviere ServerTemplateManager
+		serverTemplateManager = new ServerTemplateManager(new File("templates.csv"),
+				new File(sce.getServletContext().getRealPath("META-INF/serverFiles/")), versionGroupManager);
+
+		// aktiviere ServerManager
 		serverManager = new ServerManager(new File("servers.csv"), new File("F:/Eclipse/BukkitTest"),
-				versionGroupManager);
+				versionGroupManager, serverTemplateManager);
 
 		serverManager.loadServers();
-		try {
-			serverManager.addServer("Test", new File("F:/Eclipse/BukkitTest"),
-					versionGroupManager.getVersion("Spigot 1.8"), "", "stop", false, true, true);
-		} catch (ServerNameAlreadyExists e) {
-		} catch (ServerFolderAlreadyExists e) {
-		}
 
+		// TEST vom ServerManager
+		// add Server Test mit Spigot 1.8
+		try {
+			serverManager.addServer(new Server("Test", new File("F:/Eclipse/BukkitTest"),
+					versionGroupManager.getVersion("Spigot 1.8"), null, "", "stop", false), true, true);
+		} catch (ServerException e) {
+		}
+		// aktualisiere Navigation
 		reloadNavigation();
 	}
 
@@ -184,10 +203,14 @@ public class Webinterface extends HttpServlet implements ServletContextListener 
 		navigation.add(new NavItem("Home", URL, "", NavType.ENTRY, "home"));
 		navigation.add(new NavItem("Status", URL, "/status", NavType.ENTRY));
 
+		navigation.add(new NavItem("Serverliste", URL, "/verwaltung/serverlist", NavType.ENTRY));
+
+		navigation.add(new NavItem("Hinzuf&uuml;gen", URL, "/verwaltung", NavType.DROP_DOWN));
+		navigation.add(new NavItem("Server", URL, "/verwaltung/addserver", NavType.DROP_DOWN_ENTRY));
+		navigation.add(new NavItem("Version", URL, "/verwaltung/addversion", NavType.DROP_DOWN_ENTRY));
+		navigation.add(new NavItem("Template", URL, "/verwaltung/addtemplate", NavType.DROP_DOWN_ENTRY));
+
 		navigation.add(new NavItem("Verwaltung", URL, "/verwaltung", NavType.DROP_DOWN));
-		navigation.add(new NavItem("Serverliste", URL, "/verwaltung/serverlist", NavType.DROP_DOWN_ENTRY));
-		navigation.add(new NavItem("Server hinzuf&uuml;gen", URL, "/verwaltung/addserver", NavType.DROP_DOWN_ENTRY));
-		navigation.add(new NavItem("Userverwaltung", URL, "/verwaltung/usermanagement", NavType.DROP_DOWN_ENTRY));
 	}
 
 	public void testServer() {

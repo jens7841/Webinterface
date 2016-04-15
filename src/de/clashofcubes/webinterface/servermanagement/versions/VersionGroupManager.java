@@ -123,8 +123,8 @@ public class VersionGroupManager {
 						String versionName = data[1];
 						String serverFileName = data[2];
 
-						VersionGroup versionGroup = null;
-						if ((versionGroup = getVersionGroup(groupName)) == null) {
+						VersionGroup versionGroup = getVersionGroup(groupName);
+						if (versionGroup == null) {
 							versionGroup = new VersionGroup(groupName);
 						}
 

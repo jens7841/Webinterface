@@ -24,10 +24,9 @@ public class LoginManager {
 	private File userFile;
 	private List<User> userList;
 
-	public LoginManager(File userFile) throws IOException {
+	public LoginManager(File userFile) {
 		this.userFile = userFile;
 		this.userList = new ArrayList<>();
-		readUsersFromFile();
 	}
 
 	public User register(String username, String password) {
@@ -130,7 +129,7 @@ public class LoginManager {
 		return new BigInteger(1, m.digest()).toString(16);
 	}
 
-	private void readUsersFromFile() throws IOException {
+	public void readUsersFromFile() throws IOException {
 		if (userFile.exists()) {
 			BufferedReader reader = new BufferedReader(new FileReader(userFile));
 

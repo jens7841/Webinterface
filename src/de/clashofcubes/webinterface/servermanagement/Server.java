@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerException;
+import de.clashofcubes.webinterface.servermanagement.templates.ServerTemplate;
 import de.clashofcubes.webinterface.servermanagement.versions.Version;
 
 public class Server {
@@ -17,12 +18,14 @@ public class Server {
 	private String startParameter; // max memory etc..
 	private String stopCommand; // stop or end etc..
 	private Version version;
+	private ServerTemplate template;
 
-	public Server(String name, File folder, Version version, String startParameter, String stopCommand,
-			boolean autostart) {
+	public Server(String name, File folder, Version version, ServerTemplate template, String startParameter,
+			String stopCommand, boolean autostart) {
 		this.name = name;
 		this.folder = folder;
 		this.version = version;
+		this.template = template;
 		this.startParameter = startParameter;
 		this.stopCommand = stopCommand;
 		this.autostart = autostart;
@@ -36,7 +39,7 @@ public class Server {
 					"java " + startParameter + " -jar " + version.getServerFile().getFile().getAbsolutePath(), null,
 					folder);
 		} catch (IOException e) {
-			throw new ServerException(e.getMessage());
+			throw new ServerException(e);
 		}
 	}
 
@@ -72,5 +75,9 @@ public class Server {
 
 	public boolean isAutoStart() {
 		return autostart;
+	}
+
+	public ServerTemplate getTemplate() {
+		return template;
 	}
 }

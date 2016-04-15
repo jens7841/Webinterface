@@ -7,12 +7,14 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+
+import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 
 import de.clashofcubes.webinterface.Webinterface;
 import de.clashofcubes.webinterface.pagemanagement.Page;
 import de.clashofcubes.webinterface.servermanagement.Server;
-import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerFolderAlreadyExists;
-import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerNameAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.ServerFileManager;
 import de.clashofcubes.webinterface.servermanagement.versions.Version;
 
 public class ManagementPage extends Page {
@@ -37,12 +39,88 @@ public class ManagementPage extends Page {
 				serverList(urlEntries, request, response);
 				break;
 
+			case "addversion":
+				addVersion(urlEntries, request, response);
+				break;
 			default:
 				notFound(request);
 				break;
 			}
 
 		}
+	}
+
+	@SuppressWarnings("resource")
+	private void addVersion(String[] urlEntries, HttpServletRequest request, HttpServletResponse response) {
+		String errormsg = "errormsg";
+		request.setAttribute(Webinterface.BODY_FILE_ATTRIBUTE, "management/addVersion/body.jsp");
+
+		List<String> styles = new ArrayList<>();
+		styles.add("/css/webinterface/management/formular.css");
+		request.setAttribute(Webinterface.STYLE_LIST_ATTRIBUTE, styles);
+
+		if (request.getMethod().equalsIgnoreCase("post")) {
+
+			if (ServletFileUpload.isMultipartContent(request)) {
+
+				try {
+
+					String versionName = request.getParameter("versionname").trim();
+					String versionGroupName = request.getParameter("versiongroup").trim();
+					String newVersionGroupName = request.getParameter("newversiongroupname").trim();
+
+					Part filePart = request.getPart("serverfile");
+
+					if (versionName != null && !versionName.isEmpty() && versionGroupName != null && filePart != null) {
+
+						String fileName = filePart.getSubmittedFileName();
+						if (!fileName.isEmpty()) {
+							if (fileName.endsWith(".jar")) {
+
+								if (!(newVersionGroupName != null && !newVersionGroupName.isEmpty()
+										&& !versionGroupName.isEmpty())) {
+
+									ServerFileManager serverFileManager = Webinterface.getServerFileManager();
+
+									// serverFileManager.getServerFile()
+
+									// InputStream inputStream =
+									// filePart.getInputStream();
+									// byte[] data = new
+									// byte[inputStream.available()];
+									//
+									// inputStream.read(data, 0, data.length);
+									//
+									// FileOutputStream out = new
+									// FileOutputStream(new File("test.jar"));
+									//
+									// for (byte b : data) {
+									// out.write(b);
+									// }
+									// out.close();
+
+								} else {
+									request.setAttribute(errormsg,
+											"Bitte wähle entweder eine Version-Group oder gebe eine neue ein! (Nicht beides)");
+								}
+							} else {
+								request.setAttribute(errormsg, "Es dürfen nur .jar Dateien hochgeladen werden!");
+							}
+						} else {
+							request.setAttribute(errormsg, "Bitte lade eine Server-Datei hoch!");
+						}
+					} else {
+						request.setAttribute(errormsg, "Bitte f&uuml;lle alles aus und wähle eine Datei aus!");
+					}
+
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			} else {
+				request.setAttribute(errormsg, "Error! Bitte versuche es erneut!");
+			}
+		}
+
 	}
 
 	private void serverList(String[] urlEntries, HttpServletRequest request, HttpServletResponse response) {
@@ -56,7 +134,7 @@ public class ManagementPage extends Page {
 
 		request.setAttribute(Webinterface.BODY_FILE_ATTRIBUTE, "management/addServer/body.jsp");
 		List<String> styles = new ArrayList<>();
-		styles.add("/css/webinterface/management/addserver.css");
+		styles.add("/css/webinterface/management/formular.css");
 		request.setAttribute(Webinterface.STYLE_LIST_ATTRIBUTE, styles);
 
 		if (request.getMethod().equalsIgnoreCase("post")) {
@@ -73,14 +151,12 @@ public class ManagementPage extends Page {
 						String serverFolderName = serverName.replaceAll(" +", "_");
 						try {
 
-							Webinterface.getServerManager().addServer(serverName,
-									new File("servers/" + serverFolderName), version, "", "stop", false, true, true);
+							Webinterface.getServerManager().addServer(new Server(serverName,
+									new File("servers/" + serverFolderName), version, null, "", "stop", false), true,
+									true);
 							request.setAttribute("successmsg",
 									"Der Server " + serverName + " wurde erfolgreich hinzugef&uuml;gt");
-						} catch (ServerNameAlreadyExists e) {
-							e.printStackTrace();
-						} catch (ServerFolderAlreadyExists e) {
-							e.printStackTrace();
+
 						} catch (InvalidPathException e) {
 							request.setAttribute(errormsg, "Verwende m&ouml;glichst keine Sonderzeichen!");
 						}

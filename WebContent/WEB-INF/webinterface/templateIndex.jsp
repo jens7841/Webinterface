@@ -59,7 +59,8 @@
 					<span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span
 						class="icon-bar"></span> <span class="icon-bar"></span>
 				</button>
-				<a class="navbar-brand" href="${pageContext.request.contextPath}">ClashofCubes.de</a>
+				<a class="navbar-brand"
+					href="${pageContext.request.contextPath}<% out.print("/"+Webinterface.URL); %>">ClashofCubes.de</a>
 			</div>
 			<div id="navbar" class="navbar-collapse collapse">
 				<ul class="nav navbar-nav">

@@ -9,7 +9,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerFileAlreadyExists;
+import de.clashofcubes.webinterface.servermanagement.serverfiles.exceptions.ServerException;
 
 public class ServerFileManager {
 
@@ -33,9 +33,9 @@ public class ServerFileManager {
 		return null;
 	}
 
-	public void addFile(ServerFile file) throws ServerFileAlreadyExists {
+	public void addFile(ServerFile file) {
 		if (getServerFile(file.getName()) != null) {
-			throw new ServerFileAlreadyExists("The File was already added");
+			throw new ServerException("The File was already added");
 		}
 		files.add(file);
 		saveData();

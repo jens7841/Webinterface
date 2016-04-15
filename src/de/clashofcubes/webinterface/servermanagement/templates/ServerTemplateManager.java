@@ -27,6 +27,17 @@ public class ServerTemplateManager {
 		this.versionGroupManager = versionGroupManager;
 	}
 
+	public ServerTemplate getTemplate(String name) {
+
+		for (ServerTemplate serverTemplate : templates) {
+			if (serverTemplate.getTemplateName().equalsIgnoreCase(name)) {
+				return serverTemplate;
+			}
+		}
+
+		return null;
+	}
+
 	public void addTemplate(ServerTemplate serverTemplate) {
 		if (!templates.contains(serverTemplate)) {
 			templates.add(serverTemplate);
